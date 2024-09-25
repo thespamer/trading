@@ -1,14 +1,15 @@
 
 from fastapi import FastAPI
-from app.routes import orders, market_data, strategies
+from app.routes import orders, market_data, admin
+from app.services.order_injector_service import OrderInjectorService
+import asyncio
 
-app = FastAPI(title="Sistema de Trading")
+app = FastAPI()
+
+@app.on_event("startup")
+async def start_injector():
+    asyncio.create_task(OrderInjectorService.inject_orders())
 
 app.include_router(orders.router, prefix="/orders", tags=["Ordens"])
 app.include_router(market_data.router, prefix="/market-data", tags=["Dados de Mercado"])
-app.include_router(strategies.router, prefix="/strategies", tags=["Estratégias"])
-
-@app.get("/")
-def read_root():
-    return {"message": "Bem-vindo ao Backend do Sistema de Trading"}
-    
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])

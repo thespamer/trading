@@ -1,19 +1,23 @@
 
-from app.models.market_data import MarketData
+from app.models.market_data import Paper
+from typing import Dict
+from datetime import datetime
+
+# Banco de dados em memória simulando papéis
+market_data_db: Dict[str, Paper] = {}
 
 class MarketDataService:
     @staticmethod
-    async def get_quotes():
-        # Simulação de dados de mercado em tempo real
-        return [
-            MarketData(symbol="PETR4", price=28.50, volume=1000, timestamp="2023-10-01T10:00:00Z"),
-            MarketData(symbol="VALE3", price=75.30, volume=2000, timestamp="2023-10-01T10:00:00Z"),
-        ]
+    async def add_paper(paper: Paper):
+        paper.timestamp = datetime.utcnow().isoformat()
+        market_data_db[paper.symbol] = paper
+        return {"status": "Papel criado", "paper": paper}
 
     @staticmethod
-    async def get_historical_data(symbol: str):
-        # Simulação de dados históricos
-        return [
-            MarketData(symbol=symbol, price=28.00, volume=1500, timestamp="2023-09-30T10:00:00Z"),
-            MarketData(symbol=symbol, price=27.80, volume=1200, timestamp="2023-09-29T10:00:00Z"),
-        ]
+    async def update_paper(symbol: str, price: float):
+        if symbol in market_data_db:
+            market_data_db[symbol].price = price
+            market_data_db[symbol].timestamp = datetime.utcnow().isoformat()
+            return {"status": "Papel atualizado", "paper": market_data_db[symbol]}
+        else:
+            return {"error": "Papel não encontrado"}
