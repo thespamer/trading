@@ -8,21 +8,21 @@ function OrderBook() {
     fetch('http://localhost:8000/orders')
       .then(response => response.json())
       .then(data => setOrders(data))
-      .catch(error => console.error('Erro ao buscar ordens:', error));
+      .catch(error => console.error('Error fetching orders:', error));
   }, []);
 
   return (
     <div>
-      <h3>Livro de Ordens</h3>
+      <h3>Order Book</h3>
       <ul>
         {orders.length > 0 ? (
           orders.map(order => (
             <li key={order.id}>
-              {order.side.toUpperCase()} {order.quantity} {order.symbol} @ {order.price || 'Mercado'}
+              {order.side.toUpperCase()} {order.quantity} {order.symbol} @ {order.price || 'Market'}
             </li>
           ))
         ) : (
-          <p>Nenhuma ordem disponível.</p>
+          <p>No orders available.</p>
         )}
       </ul>
     </div>

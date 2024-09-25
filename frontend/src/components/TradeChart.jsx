@@ -13,7 +13,7 @@ function TradeChart() {
         labels: ['10:00', '10:05', '10:10', '10:15', '10:20'],  // Simulated time labels
         datasets: [
           {
-            label: 'Preço de Mercado',
+            label: 'Market Price',
             data: [28.5, 28.7, 28.4, 28.6, 28.8],  // Simulated market data
             borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -26,13 +26,13 @@ function TradeChart() {
           x: {
             title: {
               display: true,
-              text: 'Tempo',
+              text: 'Time',
             },
           },
           y: {
             title: {
               display: true,
-              text: 'Preço (BRL)',
+              text: 'Price (USD)',
             },
             beginAtZero: false,
           },
@@ -47,7 +47,7 @@ function TradeChart() {
 
   return (
     <div>
-      <h3>Gráfico de Trading</h3>
+      <h3>Trading Chart</h3>
       <canvas ref={chartRef} width="600" height="400"></canvas>
     </div>
   );

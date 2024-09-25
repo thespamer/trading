@@ -1,29 +1,29 @@
 
 # Trading System
 
-Este projeto é um sistema de trading que permite gerenciar papéis, injetar ordens de compra/venda aleatórias e exibir dados de mercado em tempo real.
+This project is a trading system that allows managing assets, injecting random buy/sell orders, and displaying real-time market data.
 
-## Funcionalidades
-- **Administração de Papéis**: Criação e atualização de papéis (ativos) com valores de mercado.
-- **Injeção de Ordens Aleatórias**: Geração automática de ordens de compra e venda para enriquecer os dados de mercado.
-- **Dados de Mercado em Tempo Real**: Um endpoint para fornecer os dados de mercado em tempo real.
+## Features
+- **Asset Management**: Create and update assets with market values.
+- **Random Order Injection**: Automatically generate buy and sell orders to enrich the market data.
+- **Real-time Market Data**: An endpoint to provide real-time market data to clients.
 
-## Como Subir o Sistema
+## How to Run the System
 
-1. Clone o repositório e navegue até o diretório do projeto.
-2. Use o Docker Compose para subir a aplicação:
+1. Clone the repository and navigate to the project directory.
+2. Use Docker Compose to start the application:
 
 ```bash
 docker-compose up --build
 ```
 
-O sistema irá levantar tanto o backend quanto o frontend. O frontend estará disponível em `http://localhost:3000` e o backend em `http://localhost:8000`.
+The system will start both the backend and frontend. The frontend will be available at `http://localhost:3000` and the backend at `http://localhost:8000`.
 
-## Rotas de Administração de Papéis (/admin)
+## Admin Routes for Asset Management (/admin)
 
-### Criar um novo papel
+### Create a new asset
 
-Para criar um novo papel, faça uma requisição **POST** para o endpoint `/admin/papers`:
+To create a new asset, make a **POST** request to the `/admin/papers` endpoint:
 
 - **Endpoint**: `POST /admin/papers`
 - **Body (JSON)**:
@@ -34,9 +34,9 @@ Para criar um novo papel, faça uma requisição **POST** para o endpoint `/admi
 }
 ```
 
-### Atualizar o valor de um papel
+### Update the value of an asset
 
-Para atualizar o valor de um papel existente, faça uma requisição **PUT** para o endpoint `/admin/papers/{symbol}`:
+To update the value of an existing asset, make a **PUT** request to the `/admin/papers/{symbol}` endpoint:
 
 - **Endpoint**: `PUT /admin/papers/{symbol}`
 - **Body (JSON)**:
@@ -46,35 +46,42 @@ Para atualizar o valor de um papel existente, faça uma requisição **PUT** par
 }
 ```
 
-### Exemplo de Uso:
+### Example Usage with `curl`:
 
+Create an asset:
 ```bash
 curl -X POST "http://localhost:8000/admin/papers" -H "Content-Type: application/json" -d '{"symbol": "JROS", "price": 10.0}'
+```
+
+Update an asset's price:
+```bash
 curl -X PUT "http://localhost:8000/admin/papers/JROS" -H "Content-Type: application/json" -d '{"price": 19.0}'
 ```
 
-## Injetor de Ordens Aleatórias
+## Random Order Injector
 
-O sistema está configurado para injetar ordens aleatórias automaticamente a cada 5 segundos. Assim, ao rodar o sistema, o **OrderInjectorService** começará a gerar ordens de compra e venda aleatórias para os papéis cadastrados.
+The system is configured to automatically inject random buy and sell orders every 5 seconds. When the system starts, the **OrderInjectorService** will begin generating random buy and sell orders for the registered assets.
 
-## Obter Dados de Market Data em Tempo Real
+You don't need to manually interact with the injector; it runs automatically on system startup.
 
-Você pode obter os dados de mercado em tempo real fazendo uma requisição **GET** para o endpoint `/market-data`:
+## Retrieve Real-time Market Data
+
+You can retrieve real-time market data by making a **GET** request to the `/market-data` endpoint:
 
 - **Endpoint**: `GET /market-data`
 
-### Exemplo de Uso:
+### Example Usage with `curl`:
 
 ```bash
 curl -X GET "http://localhost:8000/market-data"
 ```
 
-Isso retornará os papéis disponíveis com seus valores de mercado atualizados, permitindo visualização em tempo real no frontend.
+This will return the available assets with their current market prices, allowing real-time visualization in the frontend.
 
-## Frontend (Gráfico e Livro de Ordens)
+## Frontend (Chart and Order Book)
 
-O frontend exibirá:
-- **Gráfico de Trading** com os preços dos papéis atualizados.
-- **Livro de Ordens** mostrando as ordens de compra e venda geradas automaticamente.
+The frontend will display:
+- **Trading Chart** with real-time updated asset prices.
+- **Order Book** showing the generated buy and sell orders.
 
-Acesse o frontend em `http://localhost:3000`.
+Access the frontend at `http://localhost:3000`.
