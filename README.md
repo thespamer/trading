@@ -17,7 +17,7 @@ Para rodar o sistema localmente, você precisará ter os seguintes softwares ins
    Se você ainda não clonou o projeto, faça isso usando o Git:
    
    ```bash
-   git clone <URL_DO_SEU_REPOSITORIO>
+  git clone https://github.com/thespamer/trading-system.git
    cd trading-system
    ```
 
