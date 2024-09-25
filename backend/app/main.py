@@ -10,6 +10,7 @@ app = FastAPI()
 async def start_injector():
     asyncio.create_task(OrderInjectorService.inject_orders())
 
-app.include_router(orders.router, prefix="/orders", tags=["Ordens"])
-app.include_router(market_data.router, prefix="/market-data", tags=["Dados de Mercado"])
+# Incluir as rotas corretamente
+app.include_router(orders.router, prefix="/orders", tags=["Orders"])
+app.include_router(market_data.router, prefix="/market-data", tags=["Market Data"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
