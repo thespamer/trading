@@ -25,7 +25,7 @@ services:
     environment:
       POSTGRES_USER: trading_user
       POSTGRES_PASSWORD: trading_password
-      POSTGRES_DB: trading_db
+      POSTGRES_DB=trading_db
     ports:
       - "5432:5432"
 

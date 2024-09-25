@@ -8,6 +8,7 @@ COPY package.json .
 
 RUN npm install
 
+# Copiar todos os arquivos, incluindo a pasta src
 COPY . .
 
 EXPOSE 3000
