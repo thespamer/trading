@@ -4,11 +4,13 @@ FROM node:18
 
 WORKDIR /app
 
-COPY package.json .
+COPY package.json ./
+
+# Adicionar esta linha para resolver o problema do OpenSSL
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 RUN npm install
 
-# Copiar todos os arquivos, incluindo a pasta src
 COPY . .
 
 EXPOSE 3000
