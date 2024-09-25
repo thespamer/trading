@@ -5,7 +5,7 @@ function OrderBook() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/orders')
+    fetch('http://192.168.1.96:8000/orders')
       .then(response => response.json())
       .then(data => setOrders(data))
       .catch(error => console.error('Error fetching orders:', error));
