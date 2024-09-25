@@ -17,7 +17,8 @@ Para rodar o sistema localmente, você precisará ter os seguintes softwares ins
    Se você ainda não clonou o projeto, faça isso usando o Git:
    
    ```bash
-      cd trading-system
+   git clone <URL_DO_SEU_REPOSITORIO>
+   cd trading-system
    ```
 
 2. **Construa e inicie os contêineres com Docker Compose**
