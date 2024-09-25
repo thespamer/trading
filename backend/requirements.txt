@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pydantic
+kafka-python
+pika
+pytest
+pytest-asyncio
