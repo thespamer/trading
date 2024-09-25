@@ -7,6 +7,8 @@ This project is a trading system that allows managing assets, injecting random b
 - **Asset Management**: Create and update assets with market values.
 - **Random Order Injection**: Automatically generate buy and sell orders to enrich the market data.
 - **Real-time Market Data**: An endpoint to provide real-time market data to clients.
+- **List Papers**: Retrieve the list of all papers and their values.
+- **Order Volume by Period**: Get the volume of matched orders in a specified period.
 
 ## How to Run the System
 
@@ -46,6 +48,21 @@ To update the value of an existing asset, make a **PUT** request to the `/admin/
 }
 ```
 
+### List all assets and their values
+
+To retrieve the list of all assets and their current values, make a **GET** request to `/admin/papers`:
+
+- **Endpoint**: `GET /admin/papers`
+
+### Get order volume by period
+
+To retrieve the volume of matched orders in a specific period, make a **GET** request to `/admin/volume/{start}/{end}`:
+
+- **Endpoint**: `GET /admin/volume/{start}/{end}`
+- **Path Parameters**:
+  - `start`: The start of the period in ISO format (e.g., `2023-09-01T00:00:00`).
+  - `end`: The end of the period in ISO format (e.g., `2023-09-30T23:59:59`).
+
 ### Example Usage with `curl`:
 
 Create an asset:
@@ -56,6 +73,16 @@ curl -X POST "http://localhost:8000/admin/papers" -H "Content-Type: application/
 Update an asset's price:
 ```bash
 curl -X PUT "http://localhost:8000/admin/papers/JROS" -H "Content-Type: application/json" -d '{"price": 19.0}'
+```
+
+List all papers and values:
+```bash
+curl -X GET "http://localhost:8000/admin/papers"
+```
+
+Get order volume by period:
+```bash
+curl -X GET "http://localhost:8000/admin/volume/2023-09-01T00:00:00/2023-09-30T23:59:59"
 ```
 
 ## Random Order Injector
