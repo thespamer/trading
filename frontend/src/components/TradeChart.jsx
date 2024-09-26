@@ -15,7 +15,7 @@ function TradingDashboard() {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await fetch('http://192.168.1.96:8000/market-data');
+        const response = await fetch('http://192.168.1.96:8000/market-data/');
         const data = await response.json();
         setMarketData(data);
 
@@ -50,7 +50,7 @@ function TradingDashboard() {
 
     const fetchOrderVolume = async () => {
       try {
-        const response = await fetch('http://192.168.1.96:8000/orders');
+        const response = await fetch('http://192.168.1.96:8000/orders/');
         const orders = await response.json();
 
         // Calculate buy/sell volume
@@ -77,7 +77,7 @@ function TradingDashboard() {
     const intervalId = setInterval(() => {
       fetchMarketData();
       fetchOrderVolume();
-    }, 10000);  // Atualizar a cada 10 segundos
+    }, 20000);  // Atualizar a cada 10 segundos
 
     return () => clearInterval(intervalId);
   }, [priceHistory]);
