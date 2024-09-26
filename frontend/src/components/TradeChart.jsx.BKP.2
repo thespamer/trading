@@ -1,0 +1,184 @@
+import React, { useEffect, useRef, useState } from 'react';
+import Chart from 'chart.js/auto';
+
+function TradingDashboard() {
+  const chartRef = useRef(null);
+  const paperPriceChartRef = useRef(null); // Novo ref para o gráfico de barras
+  const [marketData, setMarketData] = useState([]);
+  const [orderVolume, setOrderVolume] = useState({ buys: 0, sells: 0 });
+  const [volumeHistory, setVolumeHistory] = useState({ buys: [], sells: [], timeLabels: [] });
+  const [valuablePaper, setValuablePaper] = useState('');
+  const [paperRanking, setPaperRanking] = useState([]);
+  const charts = useRef({});  // Para armazenar as instâncias dos gráficos
+
+  // Fetch market data and order book data
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const response = await fetch('http://192.168.1.96:8000/market-data/');
+        const data = await response.json();
+        setMarketData(data);
+
+        // Process valuable paper and ranking
+        if (data.length > 0) {
+          // Finding the most valuable paper
+          const valuable = data.reduce((prev, curr) => (curr.price > prev.price ? curr : prev), data[0]);
+          setValuablePaper(valuable.symbol);
+
+          // Ranking papers by price
+          const ranking = data.sort((a, b) => b.price - a.price);
+          setPaperRanking(ranking);
+        }
+      } catch (error) {
+        console.error('Error fetching market data:', error);
+      }
+    };
+
+    const fetchOrderVolume = async () => {
+      try {
+        const response = await fetch('http://192.168.1.96:8000/orders/');
+        const orders = await response.json();
+
+        // Calculate buy/sell volume
+        const buys = orders.filter(order => order.side === 'buy').length;
+        const sells = orders.filter(order => order.side === 'sell').length;
+
+        // Add data to the volume history
+        const currentTime = new Date().toLocaleTimeString(); // Get the current time
+        setVolumeHistory(prevState => ({
+          buys: [...prevState.buys, buys].slice(-10),  // Limit to the last 10 points
+          sells: [...prevState.sells, sells].slice(-10),
+          timeLabels: [...prevState.timeLabels, currentTime].slice(-10),  // Save the time labels for the last 10 points
+        }));
+
+        setOrderVolume({ buys, sells });
+      } catch (error) {
+        console.error('Error fetching order volume:', error);
+      }
+    };
+
+    // Fetch data every 10 seconds
+    fetchMarketData();
+    fetchOrderVolume();
+    const intervalId = setInterval(() => {
+      fetchMarketData();
+      fetchOrderVolume();
+    }, 5000);  // Atualizar a cada 20 segundos
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Create the chart for Buy/Sell Volume over time
+  useEffect(() => {
+    if (chartRef.current) {
+      const ctx = chartRef.current.getContext('2d');
+      if (charts.current['orderVolume']) {
+        charts.current['orderVolume'].destroy();  // Destruir o gráfico antigo se existir
+      }
+      charts.current['orderVolume'] = new Chart(ctx, {
+        type: 'line',  // Alterar para gráfico de linha
+        data: {
+          labels: volumeHistory.timeLabels,  // Usar os labels de tempo
+          datasets: [
+            {
+              label: 'Buys',
+              data: volumeHistory.buys,  // Dados de Buy ao longo do tempo
+              borderColor: 'rgba(54, 162, 235, 1)',  // Cor da linha para buys
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              fill: true,  // Linha com preenchimento
+              tension: 0.1,  // Suavização da curva
+            },
+            {
+              label: 'Sells',
+              data: volumeHistory.sells,  // Dados de Sell ao longo do tempo
+              borderColor: 'rgba(255, 99, 132, 1)',  // Cor da linha para sells
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              fill: true,
+              tension: 0.1,  // Suavização da curva
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time',
+              },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Volume',
+              },
+            },
+          },
+        },
+      });
+    }
+  }, [volumeHistory]);
+
+  // Create the chart for Paper Prices (Bar Chart)
+  useEffect(() => {
+    if (paperPriceChartRef.current) {
+      const ctx = paperPriceChartRef.current.getContext('2d');
+      if (charts.current['paperPrices']) {
+        charts.current['paperPrices'].destroy();  // Destruir o gráfico antigo se existir
+      }
+      charts.current['paperPrices'] = new Chart(ctx, {
+        type: 'bar',  // Gráfico de barras
+        data: {
+          labels: paperRanking.map(paper => paper.symbol),  // Símbolos dos papéis
+          datasets: [
+            {
+              label: 'Price (USD)',
+              data: paperRanking.map(paper => paper.price),  // Preços dos papéis
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Papers',
+              },
+            },
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'Price (USD)',
+              },
+            },
+          },
+        },
+      });
+    }
+  }, [paperRanking]);
+
+  return (
+    <div>
+      <h3>Trading Dashboard</h3>
+
+      {/* Gráfico de volume de ordens */}
+      <div>
+        <h4>Order Volume Over Time</h4>
+        <canvas ref={chartRef} width="600" height="400"></canvas>
+      </div>
+
+      {/* Gráfico de preços dos papéis */}
+      <div>
+        <h4>Paper Prices</h4>
+        <canvas ref={paperPriceChartRef} width="600" height="400"></canvas>
+      </div>
+    </div>
+  );
+}
+
+export default TradingDashboard;
+
