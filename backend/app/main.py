@@ -9,6 +9,7 @@ from app.routes import injection_control
 
 # Criação da aplicação FastAPI
 app = FastAPI()
+#app = FastAPI(redirect_slashes=False)
 
 # Adicionar o middleware de CORS
 app.add_middleware(
