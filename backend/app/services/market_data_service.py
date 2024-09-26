@@ -1,15 +1,20 @@
-
-from app.models.market_data import Paper
+from pydantic import BaseModel
 from typing import Dict, List
 from datetime import datetime
 
 # Banco de dados em memória simulando papéis
-market_data_db: Dict[str, Paper] = {}
-order_volume = {}  # Simulação de volume de ordens por período
+market_data_db: Dict[str, 'MarketData'] = {}
+order_volume: Dict[str, int] = {}  # Simulação de volume de ordens por período
+
+# Definir o modelo MarketData
+class MarketData(BaseModel):
+    symbol: str
+    price: float
+    timestamp: str = None  # Adiciona o timestamp para armazenar a data e hora da última atualização
 
 class MarketDataService:
     @staticmethod
-    async def add_paper(paper: Paper):
+    async def add_paper(paper: MarketData):
         paper.timestamp = datetime.utcnow().isoformat()
         market_data_db[paper.symbol] = paper
         return {"status": "Paper created", "paper": paper}
@@ -24,7 +29,7 @@ class MarketDataService:
             return {"error": "Paper not found"}
 
     @staticmethod
-    def get_all_papers() -> List[Paper]:
+    def get_all_papers() -> List[MarketData]:
         return list(market_data_db.values())
 
     @staticmethod
@@ -37,3 +42,4 @@ class MarketDataService:
             if start_time <= period_time <= end_time:
                 volume += vol
         return volume
+

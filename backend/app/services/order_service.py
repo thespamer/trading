@@ -1,6 +1,5 @@
-
 from app.models.order import Order
-from typing import Dict
+from typing import Dict, List
 
 # Simulando um banco de dados em memória
 orders_db: Dict[int, Order] = {}
@@ -22,3 +21,9 @@ class OrderService:
             return order
         else:
             return {"error": "Ordem não encontrada"}
+
+    @staticmethod
+    def get_all_orders() -> List[Order]:
+        # Retorna todas as ordens armazenadas no orders_db
+        return list(orders_db.values())
+

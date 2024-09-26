@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter
 from app.models.order import Order
 from app.services.order_service import OrderService
@@ -14,4 +13,8 @@ async def create_order(order: Order):
 async def get_order(order_id: int):
     result = await OrderService.get_order(order_id)
     return result
-    
+
+@router.get("/")  # Corrigir a rota para não duplicar o prefixo
+async def list_orders():
+    return OrderService.get_all_orders()
+
