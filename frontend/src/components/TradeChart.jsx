@@ -13,7 +13,9 @@ function TradingDashboard() {
   const [orderBook, setOrderBook] = useState([]);
   const [volumeHistory, setVolumeHistory] = useState({ buys: [], sells: [], timeLabels: [] });
   const [notifications, setNotifications] = useState([]);  // Para armazenar notificações
-  
+  const [totalValue, setTotalValue] = useState(0); // Total transacionado
+  const [tps, setTps] = useState(0); // Transações por segundo
+  const [matchesCount, setMatchesCount] = useState(0); // Quantidade de matches 
   const charts = useRef({});  // To store chart instances
 
   // Função para detectar matches de ordens de compra e venda
@@ -52,6 +54,25 @@ function TradingDashboard() {
       setNotifications((prev) => prev.filter((n) => n.id !== newNotification.id));
     }, 5000);
   };
+
+useEffect(() => {
+  const intervalId = setInterval(() => {
+    // Calcular o total transacionado
+    const totalValueTransacted = orderBook.reduce((acc, order) => acc + order.price * order.quantity, 0);
+    setTotalValue(totalValueTransacted);
+
+    // Calcular o TPS (transações por segundo)
+    const totalTransactions = orderBook.length;
+    setTps(totalTransactions / 2); // Considerando que o intervalo é de 2 segundos
+
+    // Calcular o número de matches
+    const matches = detectOrderMatch(orderBook).length;
+    setMatchesCount(matches);
+  }, 2000); // Atualizar a cada 2 segundos
+
+  return () => clearInterval(intervalId); // Limpar o intervalo ao desmontar o componente
+}, [orderBook]); // Dependência no orderBook para recalcular os valores sempre que ele mudar
+
 
   // Fetch market data and order book
   useEffect(() => {
@@ -274,31 +295,30 @@ function TradingDashboard() {
         <canvas ref={chartRefPrices} width="600" height="400"></canvas>
       </div>
 
-      {/* Order Book Table */}
-      <div className="order-book-container">
-        <h4>Order Book</h4>
-        <table className="order-book-table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Symbol</th>
-              <th>Quantity</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orderBook.map((order, index) => (
-              <tr key={index} className={order.side === 'buy' ? 'buy' : 'sell'}>
-                <td>{order.side.charAt(0).toUpperCase() + order.side.slice(1)}</td>
-                <td>{order.symbol}</td>
-                <td>{order.quantity}</td>
-                <td>{order.price.toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+{/* Order Book Table */}
+<div className="order-book-container">
+  <h4>Order Book</h4>
+  <table className="order-book-table">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Symbol</th>
+        <th>Quantity</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {orderBook.map((order) => (
+        <tr key={order.id} className={order.side === 'buy' ? 'buy' : 'sell'}>
+          <td>{order.side.charAt(0).toUpperCase() + order.side.slice(1)}</td>
+          <td>{order.symbol}</td>
+          <td>{order.quantity}</td>
+          <td>{order.price.toFixed(2)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
       {/* Notificações */}
 	  <div className="notification-container">
   {notifications.map((notification, index) => (
