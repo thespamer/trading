@@ -1,0 +1,173 @@
+import React, { useEffect, useRef, useState } from 'react';
+import Chart from 'chart.js/auto';
+
+function TradingDashboard() {
+  const chartRefOrders = useRef(null);
+  const chartRefPrices = useRef(null);  // Referência para o gráfico de preços
+  const [orderVolume, setOrderVolume] = useState({ buys: 0, sells: 0 });
+  const [volumeHistory, setVolumeHistory] = useState({ buys: [], sells: [], timeLabels: [] });
+  const [priceData, setPriceData] = useState({ assets: [], prices: [] });
+  const charts = useRef({});
+
+  // Fetch order data
+  useEffect(() => {
+    const fetchOrderVolume = async () => {
+      try {
+        const response = await fetch('http://192.168.1.96:8000/orders/');
+        const orders = await response.json();
+
+        console.log('Fetched orders:', orders);  // Verificar o retorno das ordens
+
+        // Extrair símbolos e preços
+        const assets = orders.map(order => order.symbol);
+        const prices = orders.map(order => order.price);
+
+        console.log('Assets:', assets);  // Verificar símbolos extraídos
+        console.log('Prices:', prices);  // Verificar preços extraídos
+
+        // Verificar se há dados de ativos e preços antes de atualizar o gráfico
+        if (assets.length && prices.length) {
+          setPriceData({ assets, prices });
+        }
+
+        // Calcular o volume de compra/venda
+        const buys = orders.filter(order => order.side === 'buy').length;
+        const sells = orders.filter(order => order.side === 'sell').length;
+
+        // Adicionar dados ao histórico de volume
+        const currentTime = new Date().toLocaleTimeString();  // Pegar o horário atual
+        setVolumeHistory(prevState => ({
+          buys: [...prevState.buys, buys].slice(-10),  // Limitar aos últimos 10 pontos
+          sells: [...prevState.sells, sells].slice(-10),
+          timeLabels: [...prevState.timeLabels, currentTime].slice(-10),  // Salvar os rótulos de tempo dos últimos 10 pontos
+        }));
+
+        setOrderVolume({ buys, sells });
+      } catch (error) {
+        console.error('Error fetching order volume:', error);
+      }
+    };
+
+    // Fetch data every 10 seconds
+    fetchOrderVolume();
+    const intervalId = setInterval(() => {
+      fetchOrderVolume();
+    }, 5000);  // Atualizar a cada 10 segundos
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Criar gráfico para Buy/Sell Volume ao longo do tempo
+  useEffect(() => {
+    if (chartRefOrders.current) {
+      const ctx = chartRefOrders.current.getContext('2d');
+      if (charts.current['orderVolume']) {
+        charts.current['orderVolume'].destroy();  // Destruir o gráfico antigo, se existir
+      }
+      charts.current['orderVolume'] = new Chart(ctx, {
+        type: 'line',  // Gráfico de linhas
+        data: {
+          labels: volumeHistory.timeLabels,  // Usar os labels de tempo
+          datasets: [
+            {
+              label: 'Buys',
+              data: volumeHistory.buys,  // Dados de Buy ao longo do tempo
+              borderColor: 'rgba(54, 162, 235, 1)',  // Cor da linha para buys
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              fill: true,  // Linha com preenchimento
+              tension: 0.1,  // Suavização da curva
+            },
+            {
+              label: 'Sells',
+              data: volumeHistory.sells,  // Dados de Sell ao longo do tempo
+              borderColor: 'rgba(255, 99, 132, 1)',  // Cor da linha para sells
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              fill: true,
+              tension: 0.1,  // Suavização da curva
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time',
+              },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Volume',
+              },
+            },
+          },
+        },
+      });
+    }
+  }, [volumeHistory]);
+
+  // Criar gráfico de preços por ativo
+  useEffect(() => {
+    if (chartRefPrices.current) {
+      const ctx = chartRefPrices.current.getContext('2d');
+      if (charts.current['priceByAsset']) {
+        charts.current['priceByAsset'].destroy();  // Destruir o gráfico antigo, se existir
+      }
+      charts.current['priceByAsset'] = new Chart(ctx, {
+        type: 'bar',  // Gráfico de barras
+        data: {
+          labels: priceData.assets,  // Ativos no eixo X
+          datasets: [
+            {
+              label: 'Order Price',
+              data: priceData.prices,  // Preços no eixo Y
+              backgroundColor: 'rgba(153, 102, 255, 0.2)',
+              borderColor: 'rgba(153, 102, 255, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Price',
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Assets',
+              },
+            },
+          },
+        },
+      });
+    }
+  }, [priceData]);
+
+  return (
+    <div>
+      <h3>Trading Dashboard</h3>
+
+      {/* Gráfico de volume de ordens */}
+      <div>
+        <h4>Order Volume Over Time</h4>
+        <canvas ref={chartRefOrders} width="600" height="400"></canvas>
+      </div>
+
+      {/* Gráfico de preços por ativo */}
+      <div>
+        <h4>Order Price by Asset</h4>
+        <canvas ref={chartRefPrices} width="600" height="400"></canvas>
+      </div>
+    </div>
+  );
+}
+
+export default TradingDashboard;
+
