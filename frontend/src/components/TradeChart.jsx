@@ -6,33 +6,33 @@ function TradingDashboard() {
   const marketDepthChartRef = useRef(null);
   const volumeByAssetChartRef = useRef(null);
   const priceByOrderChartRef = useRef(null);
-  const chartRefPrices = useRef(null);  // Referência para o gráfico de preços
+  const chartRefPrices = useRef(null);
+  
   const [priceData, setPriceData] = useState({ assets: [], prices: [] });
   const [marketData, setMarketData] = useState([]);
   const [orderBook, setOrderBook] = useState([]);
+  const [volumeHistory, setVolumeHistory] = useState({ buys: [], sells: [], timeLabels: [] });
   const [notifications, setNotifications] = useState([]);  // Para armazenar notificações
-
+  
   const charts = useRef({});  // To store chart instances
 
   // Função para detectar matches de ordens de compra e venda
   const detectOrderMatch = (orders) => {
     const matches = [];
 
-    // Agrupar as ordens por símbolo
     const groupedOrders = orders.reduce((acc, order) => {
       if (!acc[order.symbol]) acc[order.symbol] = [];
       acc[order.symbol].push(order);
       return acc;
     }, {});
 
-    // Verificar se há uma ordem de compra e venda para o mesmo ativo e preço semelhante
     Object.keys(groupedOrders).forEach((symbol) => {
       const buyOrders = groupedOrders[symbol].filter(order => order.side === 'buy');
       const sellOrders = groupedOrders[symbol].filter(order => order.side === 'sell');
 
       buyOrders.forEach((buyOrder) => {
         sellOrders.forEach((sellOrder) => {
-          if (Math.abs(buyOrder.price - sellOrder.price) <= 0.01) {  // Verifica se os preços são praticamente iguais
+          if (Math.abs(buyOrder.price - sellOrder.price) <= 0.01) {
             matches.push({ symbol, price: buyOrder.price });
           }
         });
@@ -54,91 +54,85 @@ function TradingDashboard() {
   };
 
   // Fetch market data and order book
-useEffect(() => {
-  const fetchMarketData = async () => {
-    try {
-      const response = await fetch('http://192.168.1.96:8000/market-data/');
-      const data = await response.json();
-      setMarketData(data);
-    } catch (error) {
-      console.error('Error fetching market data:', error);
-    }
-  };
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const response = await fetch('http://192.168.1.96:8000/market-data/');
+        const data = await response.json();
+        setMarketData(data);
+      } catch (error) {
+        console.error('Error fetching market data:', error);
+      }
+    };
 
-  const fetchOrderBook = async () => {
-    try {
-      const response = await fetch('http://192.168.1.96:8000/orders/');
-      const orders = await response.json();
-      setOrderBook(orders);
+    const fetchOrderBook = async () => {
+      try {
+        const response = await fetch('http://192.168.1.96:8000/orders/');
+        const orders = await response.json();
+        setOrderBook(orders);
 
-      // Atualizar priceData com os dados de ordens
-      const assets = orders.map(order => order.symbol);
-      const prices = orders.map(order => order.price);
-      setPriceData({ assets, prices });
-    } catch (error) {
-      console.error('Error fetching order book:', error);
-    }
-  };
+        // Atualizar priceData com os dados de ordens
+        const assets = orders.map(order => order.symbol);
+        const prices = orders.map(order => order.price);
+        setPriceData({ assets, prices });
 
-  fetchMarketData();
-  fetchOrderBook();
+        // Atualizar o volume de buys e sells
+        const totalBuys = orders.filter(order => order.side === 'buy').length;
+        const totalSells = orders.filter(order => order.side === 'sell').length;
+        const currentTime = new Date().toLocaleTimeString();
 
-  const intervalId = setInterval(() => {
+        setVolumeHistory(prevState => ({
+          buys: [...prevState.buys, totalBuys].slice(-10), // Limita o histórico a 10 pontos
+          sells: [...prevState.sells, totalSells].slice(-10),
+          timeLabels: [...prevState.timeLabels, currentTime].slice(-10)
+        }));
+
+        // Detectar matches de ordens e criar notificações
+        const matches = detectOrderMatch(orders);
+        matches.forEach(({ symbol, price }) => {
+          addNotification(symbol, price);
+        });
+      } catch (error) {
+        console.error('Error fetching order book:', error);
+      }
+    };
+
     fetchMarketData();
     fetchOrderBook();
-  }, 5000);  // Atualizar a cada 5 segundos
 
-  return () => clearInterval(intervalId);
-}, []);
+    const intervalId = setInterval(() => {
+      fetchMarketData();
+      fetchOrderBook();
+    }, 5000);  // Atualizar a cada 5 segundos
 
-  // Create the Market Depth Chart
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Atualiza o gráfico de Market Depth
   useEffect(() => {
     if (marketDepthChartRef.current) {
       const ctx = marketDepthChartRef.current.getContext('2d');
 
-      const groupedOrders = orderBook.reduce(
-        (acc, order) => {
-          if (!acc[order.symbol]) {
-            acc[order.symbol] = { buy: [], sell: [] };
-          }
-          if (order.side === 'buy') {
-            acc[order.symbol].buy.push(order.price);
-          } else {
-            acc[order.symbol].sell.push(order.price);
-          }
-          return acc;
-        },
-        {}
-      );
-
-      const labels = Object.keys(groupedOrders);
-      const buyData = labels.map(
-        symbol => groupedOrders[symbol].buy.length || 0
-      );
-      const sellData = labels.map(
-        symbol => groupedOrders[symbol].sell.length || 0
-      );
-
       if (charts.current['marketDepth']) {
-        charts.current['marketDepth'].destroy();
+        charts.current['marketDepth'].destroy();  // Destruir gráfico antigo
       }
 
       charts.current['marketDepth'] = new Chart(ctx, {
         type: 'line',
         data: {
-          labels,
+          labels: volumeHistory.timeLabels,  // Mostra a hora no eixo X
           datasets: [
             {
-              label: 'Buy Orders',
-              data: buyData,
+              label: 'Buys',
+              data: volumeHistory.buys,  // Dados de compra ao longo do tempo
               borderColor: 'rgba(54, 162, 235, 1)',
               backgroundColor: 'rgba(54, 162, 235, 0.2)',
               fill: true,
               tension: 0.1,
             },
             {
-              label: 'Sell Orders',
-              data: sellData,
+              label: 'Sells',
+              data: volumeHistory.sells,  // Dados de venda ao longo do tempo
               borderColor: 'rgba(255, 99, 132, 1)',
               backgroundColor: 'rgba(255, 99, 132, 0.2)',
               fill: true,
@@ -151,21 +145,21 @@ useEffect(() => {
             x: {
               title: {
                 display: true,
-                text: 'Assets',
+                text: 'Time',
               },
             },
             y: {
               beginAtZero: true,
               title: {
                 display: true,
-                text: 'Order Volume',
+                text: 'Volume',
               },
             },
           },
         },
       });
     }
-  }, [orderBook]);
+  }, [volumeHistory]);  // Atualiza o gráfico quando volumeHistory mudar
 
   // Create the Volume by Asset Chart
   useEffect(() => {
@@ -306,13 +300,13 @@ useEffect(() => {
       </div>
 
       {/* Notificações */}
-      <div className="notification-container">
-        {notifications.map((notification) => (
-          <div key={notification.id} className="notification">
-            Match! {notification.symbol} @ ${notification.price.toFixed(2)}
-          </div>
-        ))}
-      </div>
+	  <div className="notification-container">
+  {notifications.map((notification, index) => (
+    <div key={`${notification.id}-${index}`} className="notification">
+      Match! {notification.symbol} @ ${notification.price.toFixed(2)}
+    </div>
+  ))}
+</div>
     </div>
   );
 }
